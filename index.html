@@ -185,6 +185,21 @@ function recog(e){
     r.slice(0,3).map(([n,d])=>'<div class="bar"><span class="n">'+esc(n)+'</span><span class="t"><i style="width:'+Math.max(2,100*(1-d))+'%"></i></span><span class="mono">'+d.toFixed(3)+'</span></div>').join('')+
     '<p class="s" style="margin:6px 0 0">Lower distance = more similar. A match needs distance ≤ '+th.toFixed(2)+'.</p>';
   msg('');
+  return ok;
+}
+let scanT=null;
+function stopScan(){clearTimeout(scanT);scanT=null;$('#br').textContent='Identify now'}
+function scan(){
+  if(scanT){stopScan();return}
+  if(!source())return msg('Start the camera or upload a photo first.');
+  if(!Object.keys(roster).length)return msg('Enroll at least one student first.');
+  const t0=Date.now();$('#br').textContent='Scanning… tap to stop';
+  const step=()=>{
+    if(recog({type:'click'})){stopScan();return}
+    if(Date.now()-t0>15000){stopScan();msg('No match after 15 seconds. Improve the lighting, face the camera, or raise the threshold.');return}
+    scanT=setTimeout(step,600);
+  };
+  scanT=setTimeout(step,0);
 }
 
 async function cam(){
@@ -207,7 +222,7 @@ cm.onpointermove=e=>{if(!drag)return;view.x=e.clientX-drag.x;view.y=e.clientY-dr
 cm.onpointerup=cm.onpointercancel=()=>{if(drag){drag=null;analyze($('#im'))}};
 $('#zm').oninput=e=>{view.z=+e.target.value;tf();analyze($('#im'))};
 $('#rs').onclick=()=>{view={x:0,y:0,z:1};$('#zm').value=1;tf();analyze($('#im'))};
-$('#be').onclick=enroll;$('#br').onclick=recog;$('#bi').onclick=signIn;$('#bv').onclick=()=>{vOn=!vOn;if(!vOn&&window.speechSynthesis)speechSynthesis.cancel();$('#bv').textContent='Voice: '+(vOn?'on':'off')};
+$('#be').onclick=enroll;$('#br').onclick=scan;$('#bi').onclick=signIn;$('#bv').onclick=()=>{vOn=!vOn;if(!vOn&&window.speechSynthesis)speechSynthesis.cancel();$('#bv').textContent='Voice: '+(vOn?'on':'off')};
 $('#th').oninput=e=>$('#tv').textContent=(+e.target.value).toFixed(2);
 $('#bl').onclick=()=>{
   if(timer){clearInterval(timer);timer=null;$('#bl').textContent='Live: off'}
