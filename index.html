@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Face ID without machine learning</title>
+<style>
+:root{--bg:#faf6ee;--card:#fff;--tx:#241d12;--mut:#6f6552;--ac:#c27d00;--bd:#e3d9c4;--ok:#1f8a4c;--bad:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14110d;--card:#1e1a14;--tx:#f1e9da;--mut:#a89b85;--ac:#f5a524;--bd:#3a3226;--ok:#6fcf97;--bad:#eb5757}}
+:root[data-theme="dark"]{--bg:#14110d;--card:#1e1a14;--tx:#f1e9da;--mut:#a89b85;--ac:#f5a524;--bd:#3a3226;--ok:#6fcf97;--bad:#eb5757}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px;max-width:760px;margin:auto}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);margin:0 0 10px}
+p.s{color:var(--mut);margin:0 0 14px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+.mono{font-family:ui-monospace,"JetBrains Mono",Menlo,monospace}
+.cam{position:relative;width:100%;max-width:340px;aspect-ratio:1/1;margin:0 auto 10px;background:#000;border-radius:10px;overflow:hidden}
+.cam video,.cam img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+.guide{position:absolute;left:15%;top:15%;width:70%;height:70%;border:2px dashed var(--ac);border-radius:14px;pointer-events:none}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.cam.ph{touch-action:none;cursor:grab}.cam img{transform-origin:center;user-select:none;-webkit-user-drag:none}
+button,.btn{background:var(--ac);color:#111;border:0;border-radius:8px;padding:9px 13px;font-weight:600;font-size:14px;cursor:pointer}
+button.g,.btn.g{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+input[type=text],input[type=password]{flex:1;min-width:120px;padding:9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:14px}
+input[type=file]{display:none}
+.pipe{display:flex;gap:10px;justify-content:space-around;text-align:center;font-size:12px;color:var(--mut)}
+.pipe canvas{width:96px;height:96px;image-rendering:pixelated;border:1px solid var(--bd);border-radius:6px;display:block;margin-bottom:4px}
+.verdict{font-size:18px;font-weight:700;margin-bottom:8px}
+.bar{display:flex;align-items:center;gap:8px;font-size:13px;margin:4px 0}
+.bar .n{width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bar .t{flex:1;height:8px;background:var(--bd);border-radius:4px;overflow:hidden}.bar .t i{display:block;height:100%;background:var(--ac)}
+.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--bd);border-radius:20px;padding:3px 10px;margin:3px;font-size:13px}
+.chip b{cursor:pointer;color:var(--bad)}
+#msg{color:var(--mut);font-size:13px;min-height:18px}
+ol{margin:0;padding-left:20px;color:var(--mut);font-size:14px}
+</style></head><body>
+<h1>Face ID without machine learning</h1>
+<p class="s">A hand-built pipeline for a closed set of up to 25 students. No training, no neural network, no ML library: only pixel arithmetic and a distance formula.</p>
+
+<div class="card">
+<h2>1 · Camera</h2>
+<div class="cam"><video id="v" autoplay playsinline muted></video><img id="im" alt=""><div class="guide"></div></div>
+<div class="row" style="justify-content:center"><button id="bc">Start camera</button><label class="btn g" for="up">Upload photo</label><input id="up" type="file" accept="image/*"></div>
+<div id="zr" class="row" style="display:none"><span class="s" style="margin:0">Zoom</span><input id="zm" type="range" min="0.5" max="4" step="0.05" value="1" style="flex:1"><button id="rs" class="g">Reset</button></div>
+<p class="s" style="text-align:center;margin:0">Keep the face inside the dashed frame, looking straight ahead. For an uploaded photo, drag it to move and use Zoom until the face fills the frame.</p>
+</div>
+
+<div class="card">
+<h2>Cloud sync (optional)</h2>
+<div id="auth"><div class="row"><input id="em" type="text" placeholder="Teacher email"><input id="pw" type="password" placeholder="Password"></div>
+<div class="row"><button id="bi">Sign in</button><span class="s" style="margin:0">Without sign-in, templates stay in this tab only.</span></div></div>
+<div id="st" class="s" style="margin:0;display:none"></div>
+</div>
+
+<div class="card">
+<h2>2 · Enroll (save a template)</h2>
+<div class="row"><input id="name" type="text" placeholder="Student name"><button id="be">Add sample</button></div>
+<p class="s" style="margin:0 0 6px">Add 2–3 samples per student for better results. Enrolled: <span id="cnt" class="mono">0/25</span></p>
+<div id="roster"></div>
+</div>
+
+<div class="card">
+<h2>3 · Recognize</h2>
+<div class="row"><button id="br">Identify now</button><button id="bl" class="g">Live: off</button></div>
+<div class="row"><label for="th" class="s" style="margin:0">Reject threshold</label><input id="th" type="range" min="0.05" max="1" step="0.01" value="0.45" style="flex:1"><span id="tv" class="mono">0.45</span></div>
+<div id="res"><div class="s" style="margin:0">No result yet.</div></div>
+</div>
+
+<div class="card">
+<h2>What the computer sees</h2>
+<div class="pipe"><div><canvas id="c1" width="64" height="64"></canvas>Grayscale</div><div><canvas id="c2" width="64" height="64"></canvas>Equalized</div><div><canvas id="c3" width="64" height="64"></canvas>LBP codes</div></div>
+</div>
+
+<div class="card">
+<h2>How it works</h2>
+<ol>
+<li>Crop the centre of the frame, shrink to 64×64, convert to gray.</li>
+<li>Histogram equalization spreads the brightness values, which reduces lighting effects.</li>
+<li>Local Binary Pattern: each pixel is compared with its 8 neighbours, giving an 8-bit code.</li>
+<li>Split into a 4×4 grid, count the codes in each cell, and join the 16 histograms into one feature vector.</li>
+<li>Compare with each saved template using the chi-square distance. The smallest distance wins; above the threshold the answer is “not recognized”.</li>
+</ol>
+<p class="s" style="margin:10px 0 0"><b>Try the limits:</b> enroll in good light, then identify again with dim light, a tilted head, or glasses. The distance rises because nothing here learns to ignore those changes. That is why modern systems use ML.</p>
+</div>
+<div id="msg"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const N=64,G=4;let stream=null,roster={},timer=null,view={x:0,y:0,z:1};
+const work=document.createElement('canvas');work.width=work.height=N;
+const wx=work.getContext('2d',{willReadFrequently:true});
+
+const SB='https://wkyqcoiidapaacbpoqek.supabase.co',KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndreXFjb2lpZGFwYWFjYnBvcWVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxMzQxMjMsImV4cCI6MjEwODcxMDEyM30.hm8jPuHBmvGYEl5yVUBDd7KE5T1Tfd97FqzSQZFQRNA';let tok=null;
+function hd(){return{apikey:KEY,Authorization:'Bearer '+(tok||KEY),'Content-Type':'application/json'}}
+function enc(h){let s='';for(let i=0;i<h.length;i++)s+=String.fromCharCode(Math.round(Math.sqrt(h[i])*255));return btoa(s)}
+function dec(t){const s=atob(t),h=new Float32Array(s.length);for(let i=0;i<s.length;i++){const q=s.charCodeAt(i)/255;h[i]=q*q}return h}
+async function signIn(){
+  try{
+    const r=await fetch(SB+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({email:$('#em').value.trim(),password:$('#pw').value})});
+    const j=await r.json();if(!r.ok)throw new Error(j.error_description||j.msg||'check email and password');
+    tok=j.access_token;await load();$('#auth').style.display='none';$('#st').style.display='block';
+  }catch(e){msg('Sign-in failed: '+e.message)}
+}
+async function load(){
+  const r=await fetch(SB+'/rest/v1/face_templates?select=name,vec&order=created_at',{headers:hd()});
+  if(!r.ok)throw new Error('could not load templates ('+r.status+')');
+  roster={};(await r.json()).forEach(x=>(roster[x.name]=roster[x.name]||[]).push(dec(x.vec)));
+  render();$('#st').textContent='Cloud sync on: templates are saved to Supabase. Sign in again after 1 hour.';
+}
+function cpush(n,h){if(!tok)return;fetch(SB+'/rest/v1/face_templates',{method:'POST',headers:hd(),body:JSON.stringify({name:n,vec:enc(h)})}).then(r=>{if(!r.ok)msg('Cloud save failed ('+r.status+'). Sign in again?')}).catch(()=>msg('Cloud save failed (offline?)'))}
+function cdrop(n){if(!tok)return;fetch(SB+'/rest/v1/face_templates?name=eq.'+encodeURIComponent(n),{method:'DELETE',headers:hd()}).catch(()=>msg('Cloud delete failed'))}
+function msg(t){$('#msg').textContent=t}
+function source(){if(stream)return $('#v');const i=$('#im');return i.naturalWidth?i:null}
+
+function grab(src){
+  const w=src.videoWidth||src.naturalWidth,h=src.videoHeight||src.naturalHeight;
+  if(src.tagName==='IMG'){
+    const C=$('.cam').clientWidth,k=(C/Math.min(w,h))*view.z,s=0.7*C/k;
+    wx.fillStyle='#000';wx.fillRect(0,0,N,N);
+    wx.drawImage(src,(0.15*C-C/2-view.x)/k+w/2,(0.15*C-C/2-view.y)/k+h/2,s,s,0,0,N,N);
+  }else{const s=Math.min(w,h)*0.7;wx.drawImage(src,(w-s)/2,(h-s)/2,s,s,0,0,N,N)}
+  const d=wx.getImageData(0,0,N,N).data,g=new Uint8Array(N*N);
+  for(let i=0;i<N*N;i++)g[i]=0.299*d[4*i]+0.587*d[4*i+1]+0.114*d[4*i+2];
+  return g;
+}
+function equalize(g){
+  const h=new Array(256).fill(0);g.forEach(v=>h[v]++);
+  let c=0;const cdf=h.map(v=>c+=v),min=cdf.find(v=>v>0),t=(g.length-min)||1,o=new Uint8Array(g.length);
+  for(let i=0;i<g.length;i++)o[i]=Math.round((cdf[g[i]]-min)/t*255);
+  return o;
+}
+function lbp(e){
+  const img=new Uint8Array(N*N),hist=new Float32Array(G*G*256),cnt=new Array(G*G).fill(0);
+  const nb=[[-1,-1],[-1,0],[-1,1],[0,1],[1,1],[1,0],[1,-1],[0,-1]];
+  for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++){
+    const c=e[y*N+x];let code=0;
+    nb.forEach(([dy,dx],k)=>{if(e[(y+dy)*N+x+dx]>=c)code|=1<<k});
+    img[y*N+x]=code;
+    const cell=Math.min(G-1,((y-1)*G/(N-2))|0)*G+Math.min(G-1,((x-1)*G/(N-2))|0);
+    hist[cell*256+code]++;cnt[cell]++;
+  }
+  for(let c=0;c<G*G;c++)for(let b=0;b<256;b++)hist[c*256+b]/=cnt[c];
+  return{img,hist};
+}
+function chi(a,b){let s=0;for(let i=0;i<a.length;i++){const t=a[i]+b[i];if(t>0){const d=a[i]-b[i];s+=d*d/t}}return s/(G*G)}
+function show(id,a){
+  const x=$(id).getContext('2d'),im=x.createImageData(N,N);
+  for(let i=0;i<N*N;i++){im.data[4*i]=im.data[4*i+1]=im.data[4*i+2]=a[i];im.data[4*i+3]=255}
+  x.putImageData(im,0,0);
+}
+function analyze(src){const g=grab(src),e=equalize(g),l=lbp(e);show('#c1',g);show('#c2',e);show('#c3',l.img);return l.hist}
+
+function render(){
+  const names=Object.keys(roster);
+  $('#cnt').textContent=names.length+'/25';
+  $('#roster').innerHTML=names.map(n=>'<span class="chip">'+esc(n)+' ('+roster[n].length+') <b data-n="'+esc(n)+'">×</b></span>').join('');
+  document.querySelectorAll('#roster b').forEach(b=>b.onclick=()=>{cdrop(b.dataset.n);delete roster[b.dataset.n];render()});
+}
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+function enroll(){
+  const n=$('#name').value.trim(),s=source();
+  if(!n)return msg('Enter a name first.');
+  if(!s)return msg('Start the camera or upload a photo first.');
+  if(!roster[n]&&Object.keys(roster).length>=25)return msg('Roster is full (25 students).');
+  const h=analyze(s);(roster[n]=roster[n]||[]).push(h);cpush(n,h);
+  render();msg('Saved sample '+roster[n].length+' for '+n+'.');
+}
+function recog(){
+  const s=source();
+  if(!s)return msg('Start the camera or upload a photo first.');
+  if(!Object.keys(roster).length)return msg('Enroll at least one student first.');
+  const h=analyze(s),th=+$('#th').value;
+  const r=Object.entries(roster).map(([n,a])=>[n,Math.min(...a.map(t=>chi(h,t)))]).sort((a,b)=>a[1]-b[1]);
+  const ok=r[0][1]<=th;
+  $('#res').innerHTML='<div class="verdict" style="color:var(--'+(ok?'ok':'bad')+')">'+(ok?'Match: '+esc(r[0][0]):'Not recognized')+'</div>'+
+    r.slice(0,3).map(([n,d])=>'<div class="bar"><span class="n">'+esc(n)+'</span><span class="t"><i style="width:'+Math.max(2,100*(1-d))+'%"></i></span><span class="mono">'+d.toFixed(3)+'</span></div>').join('')+
+    '<p class="s" style="margin:6px 0 0">Lower distance = more similar. A match needs distance ≤ '+th.toFixed(2)+'.</p>';
+  msg('');
+}
+
+async function cam(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
+    const v=$('#v');v.srcObject=stream;v.style.display='block';$('#im').style.display='none';
+    $('#bc').textContent='Camera on';$('#zr').style.display='none';$('.cam').classList.remove('ph');
+  }catch(e){stream=null;msg('Camera is not available here. Use “Upload photo” instead, or open the file locally.')}
+}
+$('#bc').onclick=cam;
+$('#up').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;$('#v').style.display='none';$('#bc').textContent='Start camera'}
+  const i=$('#im');i.onload=()=>{view={x:0,y:0,z:1};$('#zm').value=1;tf();i.style.display='block';$('#zr').style.display='flex';$('.cam').classList.add('ph');analyze(i);msg('Photo loaded. Drag it and use Zoom to fit the face in the dashed frame.')};i.src=URL.createObjectURL(f);
+};
+function tf(){$('#im').style.transform='translate('+view.x+'px,'+view.y+'px) scale('+view.z+')'}
+let drag=null;const cm=$('.cam');
+cm.onpointerdown=e=>{if(stream||!cm.classList.contains('ph'))return;drag={x:e.clientX-view.x,y:e.clientY-view.y};cm.setPointerCapture(e.pointerId)};
+cm.onpointermove=e=>{if(!drag)return;view.x=e.clientX-drag.x;view.y=e.clientY-drag.y;tf()};
+cm.onpointerup=cm.onpointercancel=()=>{if(drag){drag=null;analyze($('#im'))}};
+$('#zm').oninput=e=>{view.z=+e.target.value;tf();analyze($('#im'))};
+$('#rs').onclick=()=>{view={x:0,y:0,z:1};$('#zm').value=1;tf();analyze($('#im'))};
+$('#be').onclick=enroll;$('#br').onclick=recog;$('#bi').onclick=signIn;
+$('#th').oninput=e=>$('#tv').textContent=(+e.target.value).toFixed(2);
+$('#bl').onclick=()=>{
+  if(timer){clearInterval(timer);timer=null;$('#bl').textContent='Live: off'}
+  else{timer=setInterval(recog,700);$('#bl').textContent='Live: on'}
+};
+</script>
+</body></html>
