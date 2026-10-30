@@ -1,41 +1,44 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Face ID without machine learning</title>
+<title>Face ID with the simplest machine learning</title>
 <style>
-:root{--bg:#faf6ee;--card:#fff;--tx:#241d12;--mut:#6f6552;--ac:#c27d00;--bd:#e3d9c4;--ok:#1f8a4c;--bad:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14110d;--card:#1e1a14;--tx:#f1e9da;--mut:#a89b85;--ac:#f5a524;--bd:#3a3226;--ok:#6fcf97;--bad:#eb5757}}
-:root[data-theme="dark"]{--bg:#14110d;--card:#1e1a14;--tx:#f1e9da;--mut:#a89b85;--ac:#f5a524;--bd:#3a3226;--ok:#6fcf97;--bad:#eb5757}
+:root{--bg:#ffffff;--card:transparent;--tx:#1d2b4a;--mut:#5f6b85;--ac:#1f4e9c;--bd:#d5d8e0;--ok:#1a7f37;--bad:#b3261e;--red:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}html,body{margin:0}
-body{background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px;max-width:760px;margin:auto}
-h1{font-size:20px;margin:0 0 4px}h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);margin:0 0 10px}
-p.s{color:var(--mut);margin:0 0 14px;font-size:14px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
-.mono{font-family:ui-monospace,"JetBrains Mono",Menlo,monospace}
-.cam{position:relative;width:100%;max-width:340px;aspect-ratio:1/1;margin:0 auto 10px;background:#000;border-radius:10px;overflow:hidden}
+body{background:var(--bg);color:var(--tx);font:16px/26px Georgia,"Times New Roman",serif;padding:18px 18px 40px 18px;max-width:800px;margin:auto}
+h1{font:700 28px/34px Georgia,serif;margin:0 0 4px}
+h2{font:italic 700 20px/26px Georgia,serif;margin:0 0 12px;display:inline-block;border-bottom:3px solid var(--red)}
+p.s,button,.btn,input,.bar,.chip,#msg,ol,.pipe,label,.s{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+p.s{color:var(--mut);margin:0 0 14px;font-size:15px;line-height:22px}
+.s{color:var(--mut);font-size:14px;line-height:20px}
+.card{border-bottom:1.5px dashed var(--bd);padding:10px 0 18px;margin-bottom:14px}
+.mono{font-family:"Courier New",ui-monospace,monospace}
+.cam{position:relative;width:100%;max-width:340px;aspect-ratio:1/1;margin:0 auto 12px;background:#000;border:2px solid var(--tx);border-radius:3px;overflow:hidden}
 .cam video,.cam img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
-.guide{position:absolute;left:15%;top:15%;width:70%;height:70%;border:2px dashed var(--ac);border-radius:14px;pointer-events:none}
+.guide{position:absolute;left:15%;top:15%;width:70%;height:70%;border:2px dashed #ff6b5b;border-radius:6px;pointer-events:none}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
 .cam.ph{touch-action:none;cursor:grab}.cam img{transform-origin:center;user-select:none;-webkit-user-drag:none}
-button,.btn{background:var(--ac);color:#111;border:0;border-radius:8px;padding:9px 13px;font-weight:600;font-size:14px;cursor:pointer}
-button.g,.btn.g{background:transparent;color:var(--tx);border:1px solid var(--bd)}
-input[type=text],input[type=password]{flex:1;min-width:120px;padding:9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:14px}
+button,.btn{background:var(--tx);color:#fff;border:2px solid var(--tx);border-radius:3px;padding:8px 14px;font-weight:600;font-size:15px;cursor:pointer;line-height:20px}
+button.g,.btn.g{background:transparent;color:var(--tx)}
+button:active{transform:translateY(1px)}
+input[type=text],input[type=password]{flex:1;min-width:120px;padding:8px;border-radius:3px;border:1.5px solid var(--tx);background:#ffffff;color:var(--tx);font-size:15px}
+input[type=range]{accent-color:var(--tx)}
 input[type=file]{display:none}
-.pipe{display:flex;gap:10px;justify-content:space-around;text-align:center;font-size:12px;color:var(--mut)}
-.pipe canvas{width:96px;height:96px;image-rendering:pixelated;border:1px solid var(--bd);border-radius:6px;display:block;margin-bottom:4px}
-.verdict{font-size:18px;font-weight:700;margin-bottom:8px}
-.bar{display:flex;align-items:center;gap:8px;font-size:13px;margin:4px 0}
-.bar .n{width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bar .t{flex:1;height:8px;background:var(--bd);border-radius:4px;overflow:hidden}.bar .t i{display:block;height:100%;background:var(--ac)}
-.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--bd);border-radius:20px;padding:3px 10px;margin:3px;font-size:13px}
-.chip b{cursor:pointer;color:var(--bad)}
-#msg{color:var(--mut);font-size:13px;min-height:18px}
-ol{margin:0;padding-left:20px;color:var(--mut);font-size:14px}
+.pipe{display:flex;gap:10px;justify-content:space-around;text-align:center;font-size:13px;color:var(--mut)}
+.pipe canvas{width:96px;height:96px;image-rendering:pixelated;border:1.5px solid var(--tx);display:block;margin-bottom:4px}
+.verdict{font:700 22px/28px Georgia,serif;margin-bottom:4px}
+.bar{display:flex;align-items:center;gap:8px;font-size:14px;margin:4px 0}
+.bar .n{width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bar .t{flex:1;height:10px;background:#e6e8ee;overflow:hidden}.bar .t i{display:block;height:100%;background:var(--ac)}
+.chip{display:inline-flex;gap:6px;align-items:center;border:1.5px solid var(--tx);border-radius:3px;background:#ffffff;padding:2px 9px;margin:3px;font-size:14px}
+.chip b{cursor:pointer;color:var(--red)}
+#msg{color:var(--red);font-size:14px;min-height:20px}
+ol{margin:0;padding-left:22px;font-size:15px;line-height:24px}
 </style></head><body>
-<h1>Face ID without machine learning</h1>
-<p class="s">A hand-built pipeline for a closed set of up to 25 students. No training, no neural network, no ML library: only pixel arithmetic and a distance formula.</p>
+<h1>Face ID with the simplest machine learning</h1>
+<p class="s">Recognizes up to 25 students with plain pixel math. A lazy learner (nearest neighbour): no training step, no neural network.</p>
 
 <div class="card">
-<h2>1 · Camera</h2>
+<h2>Step 1: Camera</h2>
 <div class="cam"><video id="v" autoplay playsinline muted></video><img id="im" alt=""><div class="guide"></div></div>
 <div class="row" style="justify-content:center"><button id="bc">Start camera</button><label class="btn g" for="up">Upload photo</label><input id="up" type="file" accept="image/*"></div>
 <div id="zr" class="row" style="display:none"><span class="s" style="margin:0">Zoom</span><input id="zm" type="range" min="0.5" max="4" step="0.05" value="1" style="flex:1"><button id="rs" class="g">Reset</button></div>
@@ -43,24 +46,25 @@ ol{margin:0;padding-left:20px;color:var(--mut);font-size:14px}
 </div>
 
 <div class="card">
-<h2>Cloud sync (optional)</h2>
+<h2>Optional: save to the cloud</h2>
 <div id="auth"><div class="row"><input id="em" type="text" placeholder="Teacher email"><input id="pw" type="password" placeholder="Password"></div>
 <div class="row"><button id="bi">Sign in</button><span class="s" style="margin:0">Without sign-in, templates stay in this tab only.</span></div></div>
 <div id="st" class="s" style="margin:0;display:none"></div>
 </div>
 
 <div class="card">
-<h2>2 · Enroll (save a template)</h2>
+<h2>Step 2: Save each student’s face</h2>
 <div class="row"><input id="name" type="text" placeholder="Student name"><button id="be">Add sample</button></div>
 <p class="s" style="margin:0 0 6px">Add 2–3 samples per student for better results. Enrolled: <span id="cnt" class="mono">0/25</span></p>
 <div id="roster"></div>
 </div>
 
 <div class="card">
-<h2>3 · Recognize</h2>
+<h2>Step 3: Who is this?</h2>
 <div class="row"><button id="br">Identify now</button><button id="bl" class="g">Live: off</button><button id="bv" class="g">Voice: on</button></div>
 <div class="row"><label for="th" class="s" style="margin:0">Reject threshold</label><input id="th" type="range" min="0.05" max="1" step="0.01" value="0.45" style="flex:1"><span id="tv" class="mono">0.45</span></div>
 <div id="res"><div class="s" style="margin:0">No result yet.</div></div>
+<div class="row" style="margin-top:10px"><span class="s" style="margin:0">Fool the AI:</span><button id="sa" class="g">AI got it</button><button id="sc" class="g">Class fooled it</button><span id="sb" class="mono">AI 0 · Class 0</span></div>
 </div>
 
 <div class="card">
@@ -163,13 +167,19 @@ function enroll(){
   const h=analyze(s);(roster[n]=roster[n]||[]).push(h);cpush(n,h);
   render();msg('Saved sample '+roster[n].length+' for '+n+'.');
 }
+const HI=['Welcome, {n}!','Ah, {n}, my favorite student!','{n} has entered the chat.','Look who it is: {n}!'];
+const NO=['I do not know you. Are you even in this class?','Stranger danger! Just kidding. Who are you?','Hmm. Is that really you?'];
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function mood(d){return d<0.30?'Definitely you.':d<0.45?'Hmm, kind of you.':'Who dis?'}
+function sayText(t){if(!vOn||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=0.95;speechSynthesis.speak(u)}
+let sAI=0,sCl=0;function sbd(){$('#sb').textContent='AI '+sAI+' · Class '+sCl}
 let vOn=true,lastN='',lastT=0;
 function say(n,force){
   if(!vOn||!window.speechSynthesis)return;
   const t=Date.now();
   if(!force&&n===lastN&&t-lastT<8000)return;
   lastN=n;lastT=t;speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance('Welcome, '+n);u.rate=0.95;
+  const u=new SpeechSynthesisUtterance(pick(HI).replace('{n}',n));u.rate=0.95;
   if(/[\u1200-\u137F]/.test(n))u.lang='am-ET';
   speechSynthesis.speak(u);
 }
@@ -181,7 +191,7 @@ function recog(e){
   const h=analyze(s),th=+$('#th').value;
   const r=Object.entries(roster).map(([n,a])=>[n,Math.min(...a.map(t=>chi(h,t)))]).sort((a,b)=>a[1]-b[1]);
   const ok=r[0][1]<=th;if(ok)say(r[0][0],manual);
-  $('#res').innerHTML='<div class="verdict" style="color:var(--'+(ok?'ok':'bad')+')">'+(ok?'Match: '+esc(r[0][0]):'Not recognized')+'</div>'+
+  $('#res').innerHTML='<div class="verdict" style="color:var(--'+(ok?'ok':'bad')+')">'+(ok?'Match: '+esc(r[0][0]):'Not recognized')+'</div><div class="s" style="margin:0 0 8px">'+mood(r[0][1])+'</div>'+
     r.slice(0,3).map(([n,d])=>'<div class="bar"><span class="n">'+esc(n)+'</span><span class="t"><i style="width:'+Math.max(2,100*(1-d))+'%"></i></span><span class="mono">'+d.toFixed(3)+'</span></div>').join('')+
     '<p class="s" style="margin:6px 0 0">Lower distance = more similar. A match needs distance ≤ '+th.toFixed(2)+'.</p>';
   msg('');
@@ -196,7 +206,7 @@ function scan(){
   const t0=Date.now();$('#br').textContent='Scanning… tap to stop';
   const step=()=>{
     if(recog({type:'click'})){stopScan();return}
-    if(Date.now()-t0>15000){stopScan();msg('No match after 15 seconds. Improve the lighting, face the camera, or raise the threshold.');return}
+    if(Date.now()-t0>15000){stopScan();msg('No match after 15 seconds. Improve the lighting, face the camera, or raise the threshold.');sayText(pick(NO));return}
     scanT=setTimeout(step,600);
   };
   scanT=setTimeout(step,0);
@@ -222,7 +232,7 @@ cm.onpointermove=e=>{if(!drag)return;view.x=e.clientX-drag.x;view.y=e.clientY-dr
 cm.onpointerup=cm.onpointercancel=()=>{if(drag){drag=null;analyze($('#im'))}};
 $('#zm').oninput=e=>{view.z=+e.target.value;tf();analyze($('#im'))};
 $('#rs').onclick=()=>{view={x:0,y:0,z:1};$('#zm').value=1;tf();analyze($('#im'))};
-$('#be').onclick=enroll;$('#br').onclick=scan;$('#bi').onclick=signIn;$('#bv').onclick=()=>{vOn=!vOn;if(!vOn&&window.speechSynthesis)speechSynthesis.cancel();$('#bv').textContent='Voice: '+(vOn?'on':'off')};
+$('#be').onclick=enroll;$('#br').onclick=scan;$('#bi').onclick=signIn;$('#sa').onclick=()=>{sAI++;sbd()};$('#sc').onclick=()=>{sCl++;sbd();sayText('Machine learning would have caught that.')};$('#bv').onclick=()=>{vOn=!vOn;if(!vOn&&window.speechSynthesis)speechSynthesis.cancel();$('#bv').textContent='Voice: '+(vOn?'on':'off')};
 $('#th').oninput=e=>$('#tv').textContent=(+e.target.value).toFixed(2);
 $('#bl').onclick=()=>{
   if(timer){clearInterval(timer);timer=null;$('#bl').textContent='Live: off'}
